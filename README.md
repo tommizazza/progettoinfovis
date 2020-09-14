@@ -47,3 +47,6 @@ Per questo motivo, è stato incluso un **pannello di gestione dei parametri** de
 
 ![grafo1](/img1.jpg) ![grafo2](/img2.jpg)
 
+Nella prima immagine si ha un solo centro di gravità posto al centro dello schermo, funziona come un normale Spring Embedder.<br/>
+Nella seconda immagine invece si hanno 2 centri di gravità, uno per i nodi blu (1/6*width,height/2) e uno per i nodi rossi (5/6*width,height/2).<br/>
+Quando si è in modalità bipartito, si incrementa di un fattore K la componente repulsiva dell'asse Y dei nodi; l'alta repulsione sull'asse y mista all'attrazione ai centri di gravità comporta un allungamento dei 2 gruppi di nodi in verticale.
