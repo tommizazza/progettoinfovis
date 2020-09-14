@@ -57,4 +57,7 @@ Per implementare questi filtri, durante la lettura del dataset necessaria per cr
 
 Inoltre per rendere la visualizzione più chiara al gestore, sono stati inseriti dei filtri anche sugli archi, si sfruttano **2 liste ordinate di archi (una per gli archi rossi e una per gli archi verdi**, entrambe ordinate sulla base del peso degli archi) e **2 array associativi di puntatori** ( [peso Archi] -> [startIndex,endIndex] ) che dato un peso, ritorna lo startIndex e l'endIndex all'interno della lista ordinata, in questo modo, per cercare gli archi di un certo peso non si deve scorrere l'intera lista di archi.<br/><br/>
 Anche lo star plot è stato realizzato da zero, è parametrico in funzione dell'array categories: si disegnano categories.lenght assi angolati equamente tra loro. Ogni volta che si clicca su un nodo utente, si calcola la somma degli acquisti dell'utente su ogni categoria e si fa uno scaling lineare del il massimo acquisto dell'utente sul raggio dello star plot. Tramite seno e coseno si proiettano i valori degli acquisti sullo star plot e si disegna un path.</br></br>
-Infine per facilitare l'interazione con l'utente sono state implementate funzionalità di zoom in, zoom out, drag sul grafo.
+Infine per facilitare l'interazione con l'utente sono state implementate funzionalità di zoom in, zoom out, drag sul grafo.</br></br>
+## Installazione
+
+Per utilizzare questo tool basta scaricare il progetto, avviare un webserver nella cartella del progetto, accedere alla pagina del webserver tramite browser.
