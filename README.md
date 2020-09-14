@@ -1,4 +1,4 @@
-# # Progetto INFOVIS 2019/2020: Tool di visualizzazione dell'output di un recommender system
+# Progetto INFOVIS 2019/2020: Tool di visualizzazione dell'output di un recommender system
 
 ## Introduzione
 
@@ -51,7 +51,7 @@ Nella **prima immagine** si ha un solo centro di gravità posto al centro dello 
 Nella **seconda immagine** invece si hanno 2 centri di gravità, uno per i nodi blu (1/6*width,height/2) e uno per i nodi rossi (5/6*width,height/2).<br/><br/>
 Quando si è in modalità bipartito, si incrementa di un fattore K la componente repulsiva dell'asse Y dei nodi; l'alta repulsione sull'asse y mista all'attrazione ai centri di gravità comporta un allungamento dei 2 gruppi di nodi in verticale.<br/><br/>
 
-Lo spring embedder normalmente non riuscirebbe a gestire tutti i 1200 nodi e 6000 archi circa su schermo contemporaneamente. Per ovviare al problema sono stati implementati dei filtri sui nodi, i *nodi utenti sono stati divisi in bucket di 50 nodi* ordinati per quantità totale di acquisti, mentre *i nodi prodotti sono stati suddivisi per categoria di appartenenza.* ***Il calcolo e l'aggiornamento delle posizione dei nodi e dei relativi archi viene svolta solo sui nodi visibili selezionati dai filtri.***<br/><br/>
+Lo spring embedder normalmente non riuscirebbe a gestire tutti i 1200 nodi e 6000 archi circa su schermo contemporaneamente. Per ovviare al problema abbiamo sostituito la distanza euclidea con la distanza di Manhattan nel calcolo delle forze risultati sui nodi, in modo da eliminare la radice quadrata (computazionalmente onerosa). Inoltre sono stati implementati dei filtri sui nodi, i *nodi utenti sono stati divisi in bucket di 50 nodi* ordinati per quantità totale di acquisti, mentre *i nodi prodotti sono stati suddivisi per categoria di appartenenza.* ***Il calcolo e l'aggiornamento delle posizione dei nodi e dei relativi archi viene svolta solo sui nodi visibili selezionati dai filtri.***<br/><br/>
 
 Per implementare questi filtri, durante la lettura del dataset necessaria per creare la struttura dati *grafo* usata dallo Spring Embedder, vengono inizializzate 2 strutture dati: ***categoriaProdotti*** (array associativo [categoria] -> [lista ID prodotti categoria]) e ***quantitaNodi*** (lista ordinata dei nodi utenti sulla base degli acquisti). Con 2 select si selezionano la categoria di prodotti da visualizzare e un bucket di nodi utenti [i,i+50] corrispondente agli indici dei nodi utenti da voler visualizzare (in questo modo non si ripercorrono sempre le liste da capo)<br/><br/>
 
