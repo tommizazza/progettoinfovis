@@ -59,7 +59,7 @@ Inoltre per rendere la visualizzione più chiara al gestore, sono stati inseriti
 Anche lo star plot è stato realizzato da zero, è parametrico in funzione dell'array categories: si disegnano categories.lenght assi angolati equamente tra loro. Ogni volta che si clicca su un nodo utente, si calcola la somma degli acquisti dell'utente su ogni categoria e si fa uno scaling lineare del il massimo acquisto dell'utente sul raggio dello star plot. Tramite seno e coseno si proiettano i valori degli acquisti sullo star plot e si disegna un path.</br></br>
 Infine per facilitare l'interazione con l'utente sono state implementate funzionalità di zoom in, zoom out, drag sul grafo.</br></br>
 ![grafo3](/img3.jpg)
-![grafo4](/img4.jpg)
+![grafo4](/img5.jpg)
 
 ## Installazione
 
