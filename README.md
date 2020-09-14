@@ -1,6 +1,6 @@
 # Progetto INFOVIS 2019/2020: Tool di visualizzazione dell'output di un recommender system
 
-E' stato realizzato un tool per la visualizzazione dell'output di un recommender system.<br/>Il dominio di applicazione è quello di un negozio che utilizza un recommender system per dedurre i prodotti più consigliati/acquistati dai suoi utenti.<br/><br/>
+E' stato realizzato un tool per la visualizzazione dell'output di un recommender system.<br/>Il dominio di applicazione è quello di un negozio che utilizza un recommender system per dedurre i prodotti più consigliati/acquistati dai suoi utenti.<br/>
 
 ## Dataset
 
