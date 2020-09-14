@@ -46,3 +46,5 @@ Il tool consiste in uno Spring Embedder realizzato da zero, che consente di visu
 Per questo motivo, è stato incluso un **pannello di gestione dei parametri** delle forze dello spring embedder.<br/> Inoltre è presente anche uno **star plot** che mostra la distrubuzione degli acquisti di un utente sulle categorie dei prodotti: (verdura,frutta,carne,pesce,bevande,latticini,alcolici).<br/></br>Le relazioni **Utente --> Prodotto** vengono visualizzate con **archi verdi**, mentre le relazioni **Prodotto --> Utenti** vengono visualizzate con **archi rossi**
 
 ![grafo1](/img1.jpg)
+![grafo1](/img1.jpg) ![grafo2](/img2.jpg)
+
