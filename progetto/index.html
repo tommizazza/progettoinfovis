@@ -1,0 +1,822 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Spring Embedded</title>
+        <script type="text/javascript" src="d3.min.js"></script>
+        <meta charset="utf-8" />
+        <style>
+        	body{margin:0px;padding:0px;width:100%;height:100%;background-color:#F0F8FF;}
+        	#svgLeft{background-color:#222222;float:left;height:100%;width:60%;margin:0;padding:0;box-sizing: border-box;border-right:2px solid rgb(140, 140, 205)}
+        	#svgRight{background-color:#F0F8FF;float:left;height:100%;width:40%;margin:0;padding:0;}
+        	#box{background-color:#F0F8FF;float:left;height:auto;width:40%;margin:0;padding:0;font-family:Arial;color:#000000;}
+        	#header{text-align:center;height:20%;width:40%;margin-right:auto;margin-left:auto;font-size:24px;}
+        	#forcePanel{float:left;height:80%;width:45%;margin:0;padding-left:5%;}
+        	#graphicPanel{;float:left;height:80%;width:50%;margin:0;padding:0;}
+        	.parameter{margin-right:auto;margin-left:auto;text-align:center}
+        	.fullscreen { display: block }
+        </style>
+    </head>
+	<body>
+		<div id="svgLeft"></div>
+		<div id="svgRight">
+		</div>
+		<div id="box">
+			<div id="header">Opzioni</div>
+			<div id="forcePanel">
+				<p style="text-align:center">PARAMETRI FORZE</p>
+				<div class="parameter">
+					-Lunghezza molle riposo: <br><input type="text" id="mollaRiposo" style="margin-left:60px;"  size="2" onchange="changeLen()">
+				</div><br>
+				<div class="parameter">
+					-Rigidità delle molle: <br><input type="text" id="rigiditaMolla" style="margin-left:60px;" size="2" onchange="changeRig()">
+				</div><br>
+				<div class="parameter">
+					-Repulsione nodi: <br><input type="text" id="repulsione" style="margin-left:60px;" size="6" onchange="changeRep()">
+				</div><br>
+				<div class="parameter">
+					-Gravità: <br><input type="text" id="gravita" style="margin-left:60px;" size="2" onchange="changeGra()">
+				</div><br>
+			</div>
+			<div id="graphicPanel">
+				<p style="text-align:center">PARAMETRI GRAFICI</p>
+				<div class="parameter">
+					-Archi Rossi:<br><select id="selectArchiRossi" onchange="mostraArchiR()"><option value="all">All</option></select>
+				</div><br>
+				<div class="parameter">
+					-Archi Verdi:<br><select id="selectArchiVerdi" onchange="mostraArchiV()"><option value="all">All</option></select>
+				</div><br>
+				<div class="parameter">
+					-Nodi Utenti<br><select id="selectNodiUtente" onchange="mostraNodiU()"></select>
+				</div><br>
+				<div class="parameter">
+					-Nodi Prodotti<br><select id="selectNodiProdotti" onchange="mostraNodiP()"></select>
+				</div><br>
+				<div class="parameter">
+					<input type="radio" id="bip" name="bip" onchange="cambiaModalita(true)" checked="true">
+					<label for="bip">Bipartito</label><br>
+					<input type="radio" id="noBip" name="bip" onchange="cambiaModalita(false)">
+					<label for="noBip">Non bipartito</label><br>
+				</div><br>
+				<div class="parameter">
+					<input type="checkbox" id="hideName" onchange="nascondiNomi(false)">
+  					<label for="vehicle1"> Nascondi nomi</label><br>
+  				</div>
+			<div style="clear:both"></div>
+		</div>
+		<div style="clear:both"></div>
+		<script type="text/javascript">
+
+									//PARAMETRI GRAFICA//
+
+			//Larghezza del grafico
+			var width  = document.getElementById("svgLeft").offsetWidth;
+			//Altezza del grafico 
+			var height = window.innerHeight;
+			//Raggio nodi del grafo
+			var nodeDim = 10;
+			//Colore nodi utenti
+			var usersColor = "rgb(0, 139, 139)";
+			//Colore nodi prodotti
+			var productsColor = "rgb(205, 92, 92)";
+			//Colore archi utenti
+			var usersEdgeColor = "rgb(154, 205, 50)";
+			//Colore archi prodotti
+			var productsEdgeColor = "rgb(205, 92, 92)";
+			//Minimo spessore archi
+			var minEdgeThickness=1.0;
+			//Massimo spessore archi
+			var maxEdgeThickness=5.0;
+			
+
+									//PARAMETRI FORZE//
+			//Molla a riposo
+			var mollaRiposo = 1050;
+			document.getElementById("mollaRiposo").value=mollaRiposo;
+			function changeLen(){
+				mollaRiposo=document.getElementById("mollaRiposo").value;
+			}
+			//Rigidità molle
+			var rigiditaMolla = 0;
+			document.getElementById("rigiditaMolla").value=rigiditaMolla;
+			function changeRig(){
+				rigiditaMolla=document.getElementById("rigiditaMolla").value;
+			}
+			//Costante repulsione nodi
+			var repulsione = 100000;
+			document.getElementById("repulsione").value=repulsione;
+			function changeRep(){
+				repulsione=document.getElementById("repulsione").value;
+			}
+			//Importanza dello spostamento
+			var scalare = 70;
+			//Gravità
+			var gravita = 1.9;
+			document.getElementById("gravita").value=gravita;
+			function changeGra(){
+				gravita=document.getElementById("gravita").value;
+			}
+			//Numero di iterazioni
+			var numeroIterazioni=-1;
+			//Bipartito true false
+			var bip = true;
+			var factor=15;
+			function cambiaModalita(mod){
+				if(mod==true){ 
+					factor=15; 
+					rigiditaMolla=0; 
+					rigiditaMolla=document.getElementById("rigiditaMolla").value=0;
+
+				} else { 
+					factor=1;
+				}
+				bip=mod;
+			}
+
+			function nascondiNomi() {
+				if (document.getElementById("hideName").checked == true){
+					svg.selectAll("text").attr("visibility","hidden");
+				} else {
+					svg.selectAll("text").filter(function() {
+										    return (arrayVisib[d3.select(this).text()]==1);
+										  }).attr("visibility","visible")
+				}
+			}
+
+									//PARAMETRI ANIMAZIONE//
+			//Lunghezza singola iterazione (in msec)
+			var MSEC = 10;
+
+
+											//FLAG//
+			//Id del nodo draggato
+			dragnode = "";
+			//Array per gestire il click dei nodi (state=0: nessun focus, state=1, nodo in focus);
+			clickArray = {focusnode:"",state:0}
+
+
+
+			//Variabile per gestire lo stretch grafico
+			var grafo;
+			//Strutture Archi
+			var archiRossi;
+			var puntatoriRossi = new Array();
+			var archiVerdi;
+			var puntatoriVerdi = new Array();
+			//StruttureNodi
+			var categorieProdotti = new Array();
+			var quantitaNodi = new Array();
+
+			var arrayVisib = new Array();
+
+			//Dragger d3.js
+			var drag = d3.drag();
+			//Min max valori compere dataset
+			var minMax;
+			
+			var svg = d3.select("body").select("#svgLeft")
+				    .append("svg").attr("id","svgBox")
+				    .attr("height",height)
+				    .attr("width",width)
+				    .attr("class","fullscreen")
+				    .call(d3.zoom().on("zoom", function () {
+				       svg.attr("transform", d3.event.transform)
+				    }))  
+				    .append("g")
+
+			function stretchGraph(dataset){
+				var iteration = 0;
+				setInterval(function(){ 
+					if(iteration==numeroIterazioni){
+						clearInterval();
+					} else {
+						//Per ogni nodo devo calcolare le forze repulsive/attrattive
+						dataset.forEach(
+							function(v,i){ 
+
+								if(svg.select("#"+v.id).attr("visibility")=="visible") {
+									//Dichiarazione spostamenti nodo V
+									var dx=0;
+									var dy=0;
+									//Forza attrattiva
+									if(rigiditaMolla!=0){
+										v["neighbors"].forEach(
+											function(u,i){
+												var distx = grafo[u["id"]].x-grafo[v["id"]].x;
+												var disty = grafo[u["id"]].y-grafo[v["id"]].y;
+												//var distanzaUV = Math.sqrt((distx*distx)+(disty*disty));
+												var distanzaUV = Math.abs(distx)+Math.abs(disty);
+												dx = dx + (rigiditaMolla)*(distanzaUV-mollaRiposo)*(distx/distanzaUV);
+												dy = dy + (rigiditaMolla)*(distanzaUV-mollaRiposo)*(disty/distanzaUV);
+											}
+										);
+									}
+									//Forza repulsiva
+									dataset.forEach(
+										function(u,j){ 
+											if((j!=i) && (arrayVisib[u.id])){
+												var distx = grafo[v["id"]].x-grafo[u["id"]].x;
+												var disty = grafo[v["id"]].y-grafo[u["id"]].y;
+												//var distanzaUV = Math.sqrt((distx*distx)+(disty*disty));
+												var distanzaUV = Math.abs(distx)+Math.abs(disty);
+
+												//Se ho un nodo in focus centrale, aumento la repulsione per avere spazio intorno
+												if(u.id==clickArray.focusnode) {
+													dx = dx + (repulsione*30/(distanzaUV*distanzaUV))*(distx/distanzaUV)
+													dy = dy + (repulsione*30/(distanzaUV*distanzaUV))*(disty/distanzaUV)
+												} else {
+													dx = dx + (repulsione/(distanzaUV*distanzaUV))*(distx/distanzaUV)
+													dy = dy + (repulsione*factor/(distanzaUV*distanzaUV))*(disty/distanzaUV)
+												}
+											}
+										}
+									);
+									//Se non lo voglio bipartito uso un centro di gravità ai lati, altrimenti uso 2 centri di gravità laterali
+									var dividi;
+									if(bip==false){	dividi=2; } 
+									else { if(v.type=="userNode") { dividi = 6;	} 
+										   else { dividi = 1.2;	}
+									}
+									//Gravità e calcolo dx/dy
+									var distxc = grafo[v["id"]].x-width/dividi;
+									var distyc = grafo[v["id"]].y-height/2;
+									//var distanzaVCentro = Math.sqrt((distxc*distxc)+(distyc*distyc));
+									var distanzaVCentro = Math.abs(distxc)+Math.abs(distyc);
+									grafo[v["id"]].dx = dx-(gravita*distanzaVCentro)*(distxc/distanzaVCentro);
+									grafo[v["id"]].dy = dy-(gravita*distanzaVCentro)*(distyc/distanzaVCentro);
+								}
+							}
+						);
+						//Aggiornamento delle posizioni dei nodi
+						dataset.forEach(
+							function(v,i){
+								if(svg.select("#"+v.id).attr("visibility")=="visible") {
+									if((dragnode!=v["id"]) && (clickArray.focusnode!=v["id"])) {
+										grafo[v["id"]].x = grafo[v["id"]].x + grafo[v["id"]].dx/scalare;
+										grafo[v["id"]].y = grafo[v["id"]].y + grafo[v["id"]].dy/scalare;
+										svg.select("#"+v["id"]).selectAll("circle").transition().attr("cx",grafo[v["id"]].x).attr("cy",grafo[v["id"]].y).duration(MSEC-2);
+										svg.select("#"+v["id"]).selectAll("text").transition().attr("x",grafo[v["id"]].x-20).attr("y",grafo[v["id"]].y-13).duration(MSEC-2);
+									}
+									v["neighbors"].forEach(
+										function(u,i){
+											d = "#"+v.id+"-"+u.id;
+											if((v.id==dragnode) || (v.id==clickHandler.focusnode)) {
+												d3.select(d).transition().attr("x2",grafo[u.id].x).attr("y2",grafo[u.id].y).duration(MSEC-2);
+											} else {
+												if((u.id==dragnode) || (u.id==clickHandler.focusnode)) {
+													d3.select(d).transition().attr("x1",grafo[v.id].x).attr("y1",grafo[v.id].y).duration(MSEC-2);
+												} else {
+													d3.select(d).transition().attr("x1",grafo[v.id].x).attr("y1",grafo[v.id].y)
+													.attr("x2",grafo[u.id].x).attr("y2",grafo[u.id].y).duration(MSEC-2);
+												}
+											}
+										}
+									);
+								}
+							}
+						); 
+						//console.log("Iterazione "+(iteration+1));
+						iteration++;
+					}
+				 },MSEC);
+			}
+
+			class Nodo {
+				constructor(posx,posy,cat) {
+					this.x = posx;
+					this.y = posy;
+					this.dx = 0;
+					this.dy = 0;
+					this.category=cat;
+				}
+			}
+
+			class Arco {
+				constructor(id,w) {
+					this.id = id;
+					this.peso = w;
+				}
+			}
+
+			class Puntatore {
+				constructor(label,startIndex,endIndex) {
+					this.id = label;
+					this.start = startIndex;
+					this.end = endIndex;
+				}
+			}
+
+			function getPos(arr,val) {
+				var i=0;
+				while((i<arr.length) && (val<arr[i].peso)) {
+					i++
+				}
+				return i;
+			}
+
+			function creaOpzioniArchi(array,arrayPunt,idSelect){
+				var startPtr = 0;
+				var startValue = array[0].peso;
+				i=1;
+				while(i<array.length){
+					if(array[i].peso!=startValue){
+						arrayPunt[startValue] = new Puntatore(startValue,startPtr,i)
+						var option=document.createElement("option");
+						document.getElementById(idSelect).add(option);
+						option.text = startValue;
+						startValue = array[i].peso;
+						startPtr=i;
+					}
+					i++;
+				}
+				arrayPunt[startValue] = new Puntatore(startValue,startPtr,array.length);
+				var option=document.createElement("option");
+				document.getElementById(idSelect).add(option);
+				option.text = startValue;
+				var option2 = document.createElement("option");
+				document.getElementById(idSelect).add(option2);
+				option2.text = "None";
+			}
+
+			function creaOpzioniProdotti(array,idSelect){
+				for(let key in array){
+					var option2 = document.createElement("option");
+					document.getElementById(idSelect).add(option2);
+					option2.text = key;
+				}
+			}
+
+			function creaOpzioniUtenti(array,idSelect){
+				var i=0;
+				while(i<array.length){
+					var option = document.createElement("option");
+					document.getElementById(idSelect).add(option);
+					option.text = array[i].peso+" ["+(i+1)+"-"+(i+50)+"]";
+					i+=50;
+				}
+				if(i-array.length>0){
+					var option = document.createElement("option");
+					document.getElementById(idSelect).add(option);
+					option.text = array[i-49].peso+" ["+(i-49)+"-"+array.length+"]";
+				}
+			}
+
+			function mostraArchiR() {
+			  	var x = document.getElementById("selectArchiRossi").value;
+			  	var c = document.getElementById("selectNodiProdotti").value;
+			  	var y = document.getElementById("selectNodiUtente").value.replace("[","").replace("]","");
+				var rangeStr = y.split(" ");
+				var index = rangeStr[1].split("-");
+			  	if(x=="all") {
+			  		svg.selectAll(".lineRossa").filter("."+c).filter(function() {
+										    return ((parseInt(d3.select(this).attr("name"))>=(index[0]-1)) && (parseInt(d3.select(this).attr("name"))<(index[1])))
+										  }).attr("visibility","visible")
+			  	} else {
+			  		svg.selectAll(".lineRossa").filter("."+c).attr("visibility", "hidden")
+			  		if(x!="None") {
+				  		for(let i=puntatoriRossi[x].start;i<puntatoriRossi[x].end;i++) {
+				  			var arco=svg.select("#"+archiRossi[i].id);
+				  			if(arco.attr("class")=="lineRossa "+c && ((parseInt(arco.attr("name"))>=(index[0]-1)) && (parseInt(arco.attr("name"))<(index[1])))){
+				  				svg.select("#"+archiRossi[i].id).attr("visibility","visible");
+				  			}
+				  		}
+				  	}
+			  	}
+			}
+
+			function mostraArchiV() {
+			  	var x = document.getElementById("selectArchiVerdi").value;
+			  	var c = document.getElementById("selectNodiProdotti").value;
+			  	var y = document.getElementById("selectNodiUtente").value.replace("[","").replace("]","");
+				var rangeStr = y.split(" ");
+				var index = rangeStr[1].split("-");
+			  	if(x=="all") {
+			  		svg.selectAll(".lineVerde").filter("."+c).filter(function() {
+										    return ((parseInt(d3.select(this).attr("name"))>=(index[0]-1)) && (parseInt(d3.select(this).attr("name"))<(index[1])))
+										  }).attr("visibility","visible")
+			  	} else {
+			  		svg.selectAll(".lineVerde").attr("visibility", "hidden")
+			  		if(x!="None") {
+				  		for(let i=puntatoriVerdi[x].start;i<puntatoriVerdi[x].end;i++) {
+				  			var arco=svg.select("#"+archiVerdi[i].id);
+				  			if(arco.attr("class")=="lineVerde "+c && ((parseInt(arco.attr("name"))>=(index[0]-1)) && (parseInt(arco.attr("name"))<(index[1])))){
+				  				svg.select("#"+archiVerdi[i].id).attr("visibility","visible");
+				  			}
+				  		}
+				  	}
+			  	}
+			}
+
+			function mostraNodiP(){
+				var x = document.getElementById("selectNodiProdotti").value;
+				var y = document.getElementById("selectNodiUtente").value.replace("[","").replace("]","");
+				var rangeStr = y.split(" ");
+				var index = rangeStr[1].split("-");
+				svg.selectAll(".productg").attr("visibility", "hidden");
+				svg.selectAll("line").attr("visibility", "hidden");
+				var prodotti = categorieProdotti[x];
+				for(var key in arrayVisib){
+					if(!(key.includes("user"))){arrayVisib[key]=0;}
+				}
+				for(let i=0;i<prodotti.length;i++) {
+					svg.select("#"+prodotti[i]).attr("visibility", "visible");
+					arrayVisib[prodotti[i]]=1;
+				}
+				svg.selectAll("."+x).filter(function() {
+										    return ((parseInt(d3.select(this).attr("name"))>=(index[0]-1)) && (parseInt(d3.select(this).attr("name"))<(index[1])))
+										  }).attr("visibility","visible")
+				document.getElementById('selectArchiRossi').getElementsByTagName('option')[0].selected = 'selected'
+				document.getElementById('selectArchiVerdi').getElementsByTagName('option')[0].selected = 'selected'
+			}
+
+			function mostraNodiU(){
+				var x = document.getElementById("selectNodiUtente").value.replace("[","").replace("]","");
+				var rangeStr = x.split(" ");
+				var index = rangeStr[1].split("-");
+				svg.selectAll(".userg").attr("visibility", "hidden");
+				svg.selectAll("line").attr("visibility", "hidden");
+				for(var key in arrayVisib){
+					if(key.includes("user")){arrayVisib[key]=0;}
+				}
+				for(let i=(index[0]-1);i<index[1];i++){
+					svg.select("#"+quantitaNodi[i].id).attr("visibility", "visible")
+					arrayVisib[quantitaNodi[i].id]=1;
+				}
+				svg.selectAll("."+document.getElementById("selectNodiProdotti").value).filter(function() {
+										    return ((parseInt(d3.select(this).attr("name"))>=(index[0]-1)) && (parseInt(d3.select(this).attr("name"))<(index[1])))
+										  }).attr("visibility","visible")
+				document.getElementById('selectArchiRossi').getElementsByTagName('option')[0].selected = 'selected'
+				document.getElementById('selectArchiVerdi').getElementsByTagName('option')[0].selected = 'selected'
+			}
+
+			function drawDataset(dataset){
+				grafo = new Array();
+				archiRossi = new Array();
+				archiVerdi = new Array();
+				categorieProdotti = new Array();
+				//Assegno posizione random ai nodi e creo liste archi
+				dataset.forEach(
+					function(elem,i){  
+						var x = Math.floor(Math.random() * width) + 1;
+						var y = Math.floor(Math.random() * height) + 1;
+						grafo[elem["id"]] = new Nodo(x,y,elem.category);
+						if(elem.type == "productNode") {
+							if(categorieProdotti[elem["category"]] === undefined){
+								categorieProdotti[elem["category"]] = new Array();
+							}
+							categorieProdotti[elem["category"]].push(elem.id)
+						}
+						var sommaQta=0;
+						elem["neighbors"].forEach(
+							function(n,i){  
+								if(elem["type"]=="userNode"){ 
+									sommaQta += n.quantity;
+									if(archiVerdi.length==0){
+									archiVerdi.push(new Arco(elem["id"]+"-"+n["id"],n["quantity"]))
+									} else {
+										archiVerdi.splice(getPos(archiVerdi,n["quantity"]), 0, new Arco(elem["id"]+"-"+n["id"],n["quantity"]));
+									}
+								} else {
+									if(archiRossi.length==0){
+									archiRossi.push(new Arco(elem["id"]+"-"+n["id"],n["pleasure"]))
+									} else {
+										archiRossi.splice(getPos(archiRossi,n["pleasure"]), 0, new Arco(elem["id"]+"-"+n["id"],n["pleasure"]));
+									}
+								}
+							}
+						);
+						if(elem["type"]=="userNode"){ 
+							if(quantitaNodi.length==0){
+								quantitaNodi.push({"id": elem.id,"peso": sommaQta})
+							} else {
+								quantitaNodi.splice(getPos(quantitaNodi,sommaQta), 0,{"id": elem.id,"peso": sommaQta});
+							}
+						}
+						arrayVisib[elem.id] = 0;
+					}
+				);
+				creaOpzioniArchi(archiRossi,puntatoriRossi,"selectArchiRossi")
+				creaOpzioniArchi(archiVerdi,puntatoriVerdi,"selectArchiVerdi")
+				creaOpzioniProdotti(categorieProdotti,"selectNodiProdotti")
+				creaOpzioniUtenti(quantitaNodi,"selectNodiUtente")
+				console.log("Archi rossi:")
+				console.log(archiRossi)
+				console.log("Archi verdi:")
+				console.log(archiVerdi)
+				console.log("Puntatori rossi:")
+				console.log(puntatoriRossi)
+				console.log("Puntatori verdi")
+				console.log(puntatoriVerdi)
+				console.log("CategorieProdotti")
+				console.log(categorieProdotti)
+				console.log("Nodi")
+				console.log(quantitaNodi)
+				console.log("Start Grafo")
+				console.log(grafo)
+
+				//Disegno Archi
+				dataset.forEach(
+					function(elem,i){  
+						var x1 = grafo[elem["id"]].x;
+						var y1 = grafo[elem["id"]].y;
+						elem["neighbors"].forEach(
+							function(n,i){  
+
+								var x2 = grafo[n["id"]].x;
+								var y2 = grafo[n["id"]].y;
+								
+								if(elem["type"]=="userNode"){ 
+									var cat;
+									for(var key in categorieProdotti){
+										if(categorieProdotti[key].includes(n.id)){
+											cat = key;
+											break;
+										}
+									}		
+									var j=0;
+									while((j<quantitaNodi.length) && (quantitaNodi[j].id!=elem.id)){
+										j++;
+									}
+									var mapDomain = d3.scaleLinear().domain([minMax[0],minMax[1]]).range([minEdgeThickness,maxEdgeThickness]);
+									svg.append("line").attr("x1",x1).attr("y1",y1).attr("x2",x2).attr("y2",y2)
+									.attr("stroke",usersEdgeColor).attr("stroke-width",mapDomain(n["quantity"])).attr("class", "lineVerde "+cat)
+									.attr("id",""+elem["id"]+"-"+n["id"]).attr("name",j);
+								} else { 
+									var j=0;
+									while((j<quantitaNodi.length) && (quantitaNodi[j].id!=n.id)){
+										j++;
+									}
+									var mapDomain = d3.scaleLinear().domain([0.0,1.0]).range([minEdgeThickness,maxEdgeThickness]);
+									svg.append("line").attr("x1",x1).attr("y1",y1).attr("x2",x2).attr("y2",y2)
+									.attr("stroke",productsEdgeColor).attr("stroke-width",mapDomain(n["pleasure"])).attr("class", "lineRossa "+elem.category)
+									.attr("id",elem["id"]+"-"+n["id"]).attr("stroke-opacity",n["pleasure"]).attr("name",j);;
+								}
+							}
+						);
+					}
+				);
+				
+				//Disegno nodi (sopra gli archi così non sono coperti)
+				dataset.forEach(
+					function(elem,i){  
+						var x1 = grafo[elem["id"]].x;
+						var y1 = grafo[elem["id"]].y;
+						var gnode = svg.append("g").attr("id",elem["id"]).attr("visibility","visible");
+						if(elem["type"]=="userNode"){
+							gnode.attr("class","userg").append("circle").attr("cx", x1).attr("cy", y1).attr("r",nodeDim)
+							.attr("fill",usersColor).attr("id",elem["id"]).attr("stroke", "white");
+						} else {
+							gnode.attr("class","productg").append("circle").attr("cx", x1).attr("cy", y1).attr("r",nodeDim)
+							.attr("fill",productsColor).attr("id",elem["id"]).attr("stroke", "white");
+							if(elem.category!=document.getElementById("selectNodiProdotti").value){
+								gnode.attr("visibility","hidden")
+							} 
+						}
+						gnode.append("text").attr("x", x1-20).attr("y", (y1-13)).attr("stroke", "#DDD")
+						.text(elem["id"]).style("font-size", "10px").style("font-family","Arial");
+						//Eventi
+						gnode.call(d3.drag().on("drag",function() { dragHandler(elem,gnode.attr("id")) }).on("end", function () { dragnode=""; }));
+						gnode.on("click",function() { clickHandler(elem,gnode.attr("id")) });
+						gnode.on("mouseover", function(d) { d3.select(this).style("cursor", "pointer"); });
+						gnode.on("mouseout", function(d) { d3.select(this).style("cursor", "default"); });
+					}
+				);
+				var element = document.getElementById('selectNodiProdotti');
+				var event = new Event('change');
+				element.dispatchEvent(event);
+				var element2 = document.getElementById('selectNodiUtente');
+				var event2 = new Event('change');
+				element2.dispatchEvent(event2);
+
+				stretchGraph(dataset);
+			}
+
+			function dragHandler(elem,id) { 
+				if(id!=clickArray.focusnode){
+					dragnode = d3.select("#"+id).attr("id");
+					d3.select("#"+id).selectAll("circle").attr("cx", d3.event.x).attr("cy", d3.event.y);
+					d3.select("#"+id).selectAll("text").attr("x", d3.event.x-20).attr("y", d3.event.y-13);
+					//Aggiornamento posizioni draggate
+					grafo[elem["id"]].x = d3.event.x;
+					grafo[elem["id"]].y = d3.event.y;
+					//Aggiornamento linee
+					svg.selectAll("line").nodes().forEach(
+													function(d,i) {
+														uv=d.id.split("-");
+														if(uv[0]==dragnode){ 
+															//Aggiorno solo le prime coordinate (draggate)
+															d3.select(d).attr("x1",d3.event.x).attr("y1",d3.event.y);
+														} 
+														if(uv[1]==dragnode){
+															d3.select(d).attr("x2",d3.event.x).attr("y2",d3.event.y);
+														}
+													}
+					);
+				}
+			}
+
+			function clickHandler(elem,id) {
+				if(clickArray.state==0){
+					clickArray.state=1;
+					clickArray.focusnode=id;
+					moveNodeToCenter(elem,id);
+					if(elem["type"]=="userNode"){ showStarPlotUser(id); }
+					//else {}
+				} else {
+					if(id==clickArray.focusnode){
+						if(elem["type"]=="userNode"){ 
+							//Togli focus e metti a 0 lo state
+							clickArray.focusnode="";
+							svg2.select("#userFigure").transition().attr("d",fakePath).duration(1000)
+							.on("end",function() {
+										svg2.select("#userFigure").remove();
+										clickArray.state=0;
+									}
+							);	
+						} else {
+							clickArray.state=0;
+							clickArray.focusnode="";
+						}
+					}
+				}
+			}
+
+			function moveNodeToCenter(elem,id) {
+				d3.select("#"+id).selectAll("circle").transition().attr("cx", (width/2)+1).attr("cy",(height/2)+1).duration(MSEC-2);
+				d3.select("#"+id).selectAll("text").transition().attr("x", ((width/2)-20)).attr("y", ((height/2)-13)).duration(MSEC-2);
+				//Aggiornamento posizioni centrate
+				grafo[elem["id"]].x = (width/2)+1;
+				grafo[elem["id"]].y = (height/2)+1;
+				//Aggiornamento linee
+				svg.selectAll("line").nodes().forEach(
+												function(d,i) {
+													uv=d.id.split("-");
+													if(uv[0]==clickArray.focusnode){ 
+														d3.select(d).attr("x1",(width/2)+1).attr("y1",(height/2)+1);
+													} 
+													if(uv[1]==clickArray.focusnode){
+														d3.select(d).attr("x2",(width/2)+1).attr("y2",(height/2)+1);
+													}
+												}
+				);
+			}
+
+			function getMaxMinBoughtValue(dataset){
+				var max=-1;
+				var min=-1;
+				for(let i=0;i<dataset.length;i++){
+					for(let j=0;j<dataset[i]["neighbors"].length;j++){
+						if(dataset[i].type == "userNode"){
+							if(max==-1) {
+								max=dataset[i]["neighbors"][j].quantity;
+								min=max;
+							} else {
+								if(min>dataset[i]["neighbors"][j].quantity) {
+									min = dataset[i]["neighbors"][j].quantity
+								}
+								if(max<dataset[i]["neighbors"][j].quantity) {
+									max = dataset[i]["neighbors"][j].quantity
+								}
+							}
+						}
+					}
+				}
+				return [min,max];
+			}
+
+			//Main
+			d3.json("fileDef.json")
+			.then(function(dataset) { 
+				minMax=getMaxMinBoughtValue(dataset);
+				drawDataset(dataset);        
+				userCat = getMatrix(dataset);
+			});                              
+		</script>
+		<script type="text/javascript">
+
+										//PARAMETRI GRAFICA//
+
+			//Larghezza del grafico
+			var starPlotWidth  = document.getElementById("svgRight").offsetWidth;
+			//Altezza del grafico 
+			var starPlotHeight = window.innerHeight/2.5;
+			//Raggio dello starPlot
+			var starPlotR = document.getElementById("svgRight").offsetWidth/6.5;
+
+
+
+										//UTILITY
+			var categories = ["Verdura","Frutta","Latticini","Carne","Pesce","Bevande","Alcolici"];
+			var points = []; //Array associativo con le categorie
+			var userCat;  //Matrice utenti/qtà prodotti acquistati per ogni categoria
+			var fakePath;
+
+			class StarPlotPoint {
+				constructor(posx,posy) {
+					this.x = posx;
+					this.y = posy;
+				}
+			}
+
+			var svg2 = d3.select("body").select("#svgRight")
+				    .append("svg").attr("id","svgBox2")
+				    .attr("height",starPlotHeight)
+				    .attr("width",starPlotWidth)
+				    .attr("class","fullscreen") 
+				    .append("g").attr("id","starPlot");
+
+			//Genero punti del poligono dello star plot e il path del poligono
+			var path = "M ";
+			for(let i=0;i<categories.length;i++) {
+				var x =  (starPlotWidth/2+(starPlotR*(Math.cos(2*Math.PI*(i/categories.length))))) //Centro + raggio*cos(i/NUMSPICCHI*PIGRECO)
+				var y = (starPlotHeight/2+(starPlotR*(Math.sin(2*Math.PI*(i/categories.length))))) //Centro + raggio*sin(i/NUMSPICCHI*PIGRECO)
+				points[categories[i]] = new StarPlotPoint(x,y);
+				path = path + x + " " + y + " L ";
+			}
+			path = path+points[categories[0]].x+" "+points[categories[0]].y; //Chiudo il poligono
+			drawStarPlot();
+
+			function drawStarPlot(){
+				svg2.append("path").attr("d",path).attr("stroke","#222222").attr("stroke-width",2).attr("fill","#FFFFFF");
+				svg2.append("circle").attr("cx",starPlotWidth/2).attr("cy",starPlotHeight/2).attr("fill","black").attr("r",2).attr("id","starPlotCenter")
+				//Disegno assi che partono dal centro e vanno verso l'esterno e le scritte
+				for(let i=0;i<categories.length;i++) {
+					//Asse
+					svg2.append("line").attr("id","asse_"+categories[i]).attr("class", "line")
+					.attr("x1",starPlotWidth/2).attr("y1",starPlotHeight/2)
+					.attr("x2",points[categories[i]].x).attr("y2",points[categories[i]].y)
+					.attr("stroke","#555555").attr("stroke-width",2).attr("stroke-opacity",0.1);
+					//Scritta
+					var x =  (starPlotWidth/2+((starPlotR+40)*(Math.cos(2*Math.PI*(i/categories.length))))) //Centro + raggio*cos(i/NUMSPICCHI*PIGRECO)
+					var y = (starPlotHeight/2+((starPlotR+25)*(Math.sin(2*Math.PI*(i/categories.length))))) //Centro + raggio*sin(i/NUMSPICCHI*PIGRECO)
+					svg2.append("text").attr("x", x).attr("y",y).attr("stroke", "#000").text(categories[i])
+					.style("font-size", "12px").style("font-family","Arial").style("text-anchor", "middle");
+				}
+			}
+
+			function showStarPlotUser(id){
+				//Calcolo il massimo utente
+				var maxUser=-1;
+				for(const cat in userCat[id]){
+					var value = userCat[id][cat];
+					if(maxUser==-1){ 
+						maxUser=value; 
+					} else {
+						if(maxUser<value) {
+							maxUser = value;
+						}
+					}
+				}
+				//Faccio scale valori massimi minimi con il raggio dello star plot
+				var mapDomain = d3.scaleLinear().domain([0,maxUser]).range([0,starPlotR-2]);
+				//Disegno
+				var path = "M";
+				fakePath = "M"; //Per l'animazione;
+				var firstX;
+				var firstY;
+				for(let i=0;i<categories.length;i++){
+					var x;
+					var y;
+					if(userCat[id][categories[i]]===undefined){
+						x=starPlotWidth/2;
+						y=starPlotHeight/2;
+					} else {
+						var alfa = mapDomain(userCat[id][categories[i]]);
+						var x =  (starPlotWidth/2+(alfa*(Math.cos(2*Math.PI*(i/categories.length))))) //Centro + raggio*cos(i/NUMSPICCHI*PIGRECO)
+						var y = (starPlotHeight/2+(alfa*(Math.sin(2*Math.PI*(i/categories.length))))) //Centro + raggio*sin(i/NUMSPICCHI*PIGRECO)
+					}
+					path = path + x + "," + y + " L";
+					fakePath = fakePath + starPlotWidth/2 + "," + starPlotHeight/2 + " L"
+					if(i==0){ firstX=x; firstY=y; }
+				}
+				path=path+firstX+","+firstY;
+				fakePath=fakePath+starPlotWidth/2+","+starPlotHeight/2;
+				svg2.append("path").attr("d",fakePath).attr("stroke","rgb(134, 185, 20)").attr("stroke-width",2).attr("fill","rgb(134, 185, 20)").attr("id","userFigure")
+				.transition().attr("d",path).duration(2000);
+			}
+
+			function getMatrix(dataset){
+				var matrix = [];
+				for(let i=0;i<dataset.length;i++){
+					if(dataset[i].type == "userNode"){
+						matrix[dataset[i].id] = [];
+						for(let j=0;j<dataset[i]["neighbors"].length;j++){
+							var productId = dataset[i]["neighbors"][j].id;
+							if(matrix[dataset[i].id][grafo[productId].category] === undefined){
+								matrix[dataset[i].id][grafo[productId].category] = 0;
+							}
+							matrix[dataset[i].id][grafo[productId].category] += dataset[i]["neighbors"][j].quantity;					
+						}
+					}
+				}
+				return matrix;
+			}
+		</script>
+		<script type="text/javascript">
+			window.addEventListener('resize', function(){
+        		d3.select("#svgBox").attr("width",document.getElementById("svgLeft").offsetWidth).attr("height",window.innerHeight);
+        		d3.select("#svgBox2").attr("width",document.getElementById("svgRight").offsetWidth).attr("height",window.innerHeight/2);
+                }, true);
+
+		</script>
+	</body>
+</html>
