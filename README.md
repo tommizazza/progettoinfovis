@@ -1,9 +1,9 @@
 # Progetto INFOVIS 2019/2020: Tool di visualizzazione dell'output di un recommender system
 
-## Introduzione
-
-
 E' stato realizzato un tool per la visualizzazione dell'output di un recommender system.<br/>Il dominio di applicazione è quello di un negozio che utilizza un recommender system per dedurre i prodotti più consigliati/acquistati dai suoi utenti.<br/><br/>
+
+## Dataset
+
 Il dataset descrive 2 tipologie di nodi: **nodi utenti** (id) ,e **nodi prodotto** (id,categoriaProdotto).<br/>
 Tra questi nodi sono presenti 2 diverse relazioni:<br/>**-Relazione utente->prodotto**: rappresenta quanto un utente X ha acquistato un prodotto Y.<br/>**-Relazione prodotto->utente**: rappresenta quanto un prodotto X è consigliato a un utente Y dal recommender system.<br/><br/>
 Esempio di nodo utente: (ha acquistato uva,melanzane e del vino pecorino)
