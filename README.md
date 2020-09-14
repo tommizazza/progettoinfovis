@@ -38,7 +38,7 @@ Esempio di nodo prodotto: (raccomandato agli utenti 871,744,155)
 		]
 }
 ```
-Il dataset è composto da 1000 nodi utenti e circa 200 nodi prodotti.
+Il dataset è sintetico, ed è composto da 1000 nodi utenti, circa 200 nodi prodotti e circa 6000 archi totali.
 
 ## Progetto
 
